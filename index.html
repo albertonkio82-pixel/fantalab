@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FantaLab</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiRmFudGFMYWIiLCJzaG9ydF9uYW1lIjoiRmFudGFMYWIiLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzBhMGYwZCIsInRoZW1lX2NvbG9yIjoiIzBhMGYwZCJ9">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#0a0f0d; --bg2:#101815; --card:#141e19; --border:#213029;
+    --emerald:#00c896; --emerald-dim:#00966f; --gold:#d4af37;
+    --white:#f4f7f5; --grey:#8fa39a; --red:#e5484d; --yellow:#e0b341;
+    --font-d:'Space Grotesk',sans-serif; --font-b:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; background:var(--bg); color:var(--white); font-family:var(--font-b); min-height:100vh;}
+  h1,h2,h3,.disp{font-family:var(--font-d);}
+  button{font-family:var(--font-b); cursor:pointer;}
+  input,select{font-family:var(--font-b);}
+  .screen{display:none; min-height:100vh; padding-bottom:70px;}
+  .screen.active{display:block;}
+  .wrap{max-width:520px; margin:0 auto; padding:20px;}
+
+  /* --- Auth / Home shared --- */
+  .logo-mark{width:64px; height:64px; border-radius:50%; background:conic-gradient(from 200deg, var(--emerald), var(--emerald-dim), var(--gold), var(--emerald)); display:flex; align-items:center; justify-content:center; margin:0 auto 14px; box-shadow:0 0 30px rgba(0,200,150,.25);}
+  .logo-mark span{background:var(--bg); width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-d); font-weight:700; font-size:19px; letter-spacing:-1px;}
+  .brand-title{text-align:center; font-size:30px; font-weight:700; margin:0;}
+  .brand-payoff{text-align:center; font-size:11px; letter-spacing:3px; color:var(--emerald); margin:6px 0 30px; font-weight:600;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12px; color:var(--grey); margin-bottom:6px; font-weight:500;}
+  .field input, .field select{width:100%; padding:13px 14px; background:var(--card); border:1px solid var(--border); border-radius:10px; color:var(--white); font-size:15px;}
+  .field input:focus, .field select:focus{outline:none; border-color:var(--emerald);}
+  .btn{width:100%; padding:14px; border-radius:10px; border:none; font-weight:600; font-size:15px; margin-top:4px;}
+  .btn-primary{background:var(--emerald); color:#04120d;}
+  .btn-primary:active{background:var(--emerald-dim);}
+  .btn-ghost{background:transparent; border:1px solid var(--border); color:var(--white);}
+  .btn-sm{width:auto; padding:9px 16px; font-size:13px; border-radius:8px;}
+  .link-sw{text-align:center; margin-top:16px; color:var(--grey); font-size:13px;}
+  .link-sw a{color:var(--emerald); text-decoration:none; font-weight:600;}
+  .err{color:var(--red); font-size:13px; margin-top:8px; text-align:center; min-height:16px;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px;}
+  .home-action{display:flex; align-items:center; justify-content:space-between; padding:18px; margin-bottom:12px;}
+  .home-action .ti{font-weight:600; font-size:16px;}
+  .home-action .sub{font-size:12px; color:var(--grey); margin-top:2px;}
+  .chev{color:var(--emerald); font-size:20px;}
+  .top-hi{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px;}
+  .top-hi .greet{font-size:13px; color:var(--grey);}
+  .top-hi .name{font-weight:600; font-size:16px;}
+  .logout-x{background:none; border:none; color:var(--grey); font-size:12px; text-decoration:underline;}
+
+  /* --- Live auction --- */
+  .live-header{position:sticky; top:0; background:rgba(10,15,13,.96); backdrop-filter:blur(8px); z-index:20; padding:14px 16px 10px; border-bottom:1px solid var(--border);}
+  .live-title-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .live-title-row h2{margin:0; font-size:17px;}
+  .code-pill{font-size:11px; color:var(--emerald); background:rgba(0,200,150,.1); padding:4px 10px; border-radius:20px; font-weight:600; letter-spacing:1px;}
+  .credit-strip{display:flex; gap:8px; overflow-x:auto; padding-bottom:2px;}
+  .credit-strip::-webkit-scrollbar{display:none;}
+  .cpill{flex:0 0 auto; background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:7px 12px; text-align:center; min-width:70px;}
+  .cpill.me{border-color:var(--emerald);}
+  .cpill .cn{font-size:10px; color:var(--grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70px;}
+  .cpill .cv{font-size:14px; font-weight:700; margin-top:2px;}
+  .cpill .cv.low{color:var(--red);}
+
+  .tabbar{display:flex; gap:6px; padding:12px 16px 0;}
+  .tab{flex:1; text-align:center; padding:9px 0; font-size:12.5px; font-weight:600; color:var(--grey); background:var(--bg2); border-radius:9px; border:1px solid var(--border);}
+  .tab.on{color:#04120d; background:var(--emerald); border-color:var(--emerald);}
+
+  .search-box{margin:14px 16px 6px;}
+  .search-box input{width:100%; padding:13px 16px; background:var(--card); border:1px solid var(--border); border-radius:12px; color:var(--white); font-size:15px;}
+
+  .perfido-bar{margin:10px 16px; background:linear-gradient(135deg, rgba(212,175,55,.14), rgba(212,175,55,.03)); border:1px solid rgba(212,175,55,.35); border-radius:12px; padding:12px 14px; display:flex; gap:10px; align-items:flex-start;}
+  .perfido-bar .ic{font-size:18px;}
+  .perfido-bar .tx{font-size:13px; line-height:1.4;}
+  .perfido-bar .tx b{color:var(--gold);}
+
+  .plist{padding:6px 16px 20px;}
+  .pcard{display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--border); border-radius:13px; padding:11px 12px; margin-bottom:9px;}
+  .pcard.sold{opacity:.4;}
+  .ring{position:relative; width:46px; height:46px; flex:0 0 46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-d); font-weight:700; font-size:14px;}
+  .pinfo{flex:1; min-width:0;}
+  .pinfo .pn{font-weight:600; font-size:14.5px; display:flex; align-items:center; gap:6px;}
+  .roletag{font-size:9px; font-weight:700; padding:2px 5px; border-radius:4px; background:var(--bg2); color:var(--grey);}
+  .pinfo .pm{font-size:11.5px; color:var(--grey); margin-top:2px;}
+  .fascia-dot{width:7px; height:7px; border-radius:50%; display:inline-block;}
+  .buy-btn{background:var(--bg2); border:1px solid var(--border); color:var(--emerald); border-radius:9px; padding:8px 12px; font-size:12px; font-weight:600; flex:0 0 auto;}
+
+  /* modal */
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:flex-end; justify-content:center; z-index:50;}
+  .overlay.on{display:flex;}
+  .sheet{background:var(--bg2); border-radius:20px 20px 0 0; padding:20px; width:100%; max-width:520px; max-height:85vh; overflow-y:auto;}
+  .sheet-handle{width:36px; height:4px; background:var(--border); border-radius:3px; margin:0 auto 16px;}
+  .sheet h3{margin:0 0 4px;}
+  .advice-box{border-radius:12px; padding:14px; margin:14px 0; font-size:14px; line-height:1.5;}
+  .advice-buy{background:rgba(0,200,150,.12); border:1px solid rgba(0,200,150,.4); color:var(--emerald);}
+  .advice-wait{background:rgba(224,179,65,.12); border:1px solid rgba(224,179,65,.4); color:var(--yellow);}
+  .advice-avoid{background:rgba(229,72,77,.12); border:1px solid rgba(229,72,77,.4); color:var(--red);}
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0;}
+  .stat-grid .s{background:var(--card); border-radius:9px; padding:9px 11px;}
+  .stat-grid .s .l{font-size:10px; color:var(--grey);}
+  .stat-grid .s .v{font-size:15px; font-weight:700; margin-top:2px;}
+
+  .roster-block{margin-bottom:16px;}
+  .roster-block .rh{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .roster-block .rh .rn{font-weight:600;}
+  .roster-block .rh .rc{font-size:13px; color:var(--emerald); font-weight:700;}
+  .roster-item{display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:13.5px;}
+  .roster-item:last-child{border-bottom:none;}
+
+  .score-hero{text-align:center; padding:20px 0;}
+  .score-ring-big{width:120px; height:120px; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-family:var(--font-d); font-size:34px; font-weight:700;}
+  .stars{color:var(--gold); font-size:18px; letter-spacing:2px;}
+
+  .fab{position:fixed; bottom:16px; right:16px; left:16px; max-width:488px; margin:0 auto; z-index:15;}
+  .toast{position:fixed; top:14px; left:50%; transform:translateX(-50%); background:var(--emerald); color:#04120d; padding:10px 18px; border-radius:20px; font-size:13px; font-weight:600; z-index:100; display:none; box-shadow:0 4px 20px rgba(0,0,0,.3);}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- AUTH -->
+<div class="screen active" id="scr-auth">
+  <div class="wrap" style="padding-top:60px;">
+    <div class="logo-mark"><span>FL</span></div>
+    <h1 class="brand-title">FantaLab</h1>
+    <p class="brand-payoff">ANALISI · STRATEGIA · VITTORIA</p>
+    <div class="card">
+      <div class="field" id="f-nome" style="display:none;">
+        <label>Il tuo nome (visibile agli altri)</label>
+        <input type="text" id="in-nome" placeholder="es. Alberto">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="in-email" placeholder="tuamail@esempio.it">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="in-pass" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" id="btn-auth-submit">Accedi</button>
+      <div class="err" id="auth-err"></div>
+    </div>
+    <div class="link-sw" id="auth-switch">Non hai un account? <a id="auth-switch-link">Registrati</a></div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="screen" id="scr-home">
+  <div class="wrap" style="padding-top:24px;">
+    <div class="top-hi">
+      <div>
+        <div class="greet">Ciao,</div>
+        <div class="name" id="home-name">—</div>
+      </div>
+      <button class="logout-x" id="btn-logout">esci</button>
+    </div>
+    <div class="logo-mark" style="width:44px;height:44px;margin:0 0 18px;"><span style="width:36px;height:36px;font-size:13px;">FL</span></div>
+
+    <div class="card home-action" id="act-new">
+      <div><div class="ti">⚽ Nuova asta</div><div class="sub">Crea e invita gli altri 7</div></div>
+      <div class="chev">›</div>
+    </div>
+    <div class="card home-action" id="act-join">
+      <div><div class="ti">🔑 Unisciti con codice</div><div class="sub">Entra in un'asta esistente</div></div>
+      <div class="chev">›</div>
+    </div>
+
+    <h3 style="margin:22px 0 10px; font-size:14px; color:var(--grey);">LE TUE ASTE</h3>
+    <div id="my-auctions"></div>
+  </div>
+</div>
+
+<!-- NEW / JOIN forms -->
+<div class="screen" id="scr-newjoin">
+  <div class="wrap" style="padding-top:24px;">
+    <button class="btn-sm btn-ghost" id="btn-back-home" style="margin-bottom:18px;">← Indietro</button>
+    <div class="card" id="panel-new" style="display:none;">
+      <h3 style="margin-top:0;">Nuova asta</h3>
+      <div class="field"><label>Nome asta</label><input type="text" id="new-nome" placeholder="es. Lega degli Amici 26/27"></div>
+      <div class="field"><label>Crediti per partecipante</label>
+        <select id="new-crediti"><option value="500">500</option><option value="750" selected>750</option><option value="1000">1000</option></select>
+      </div>
+      <button class="btn btn-primary" id="btn-create-auction">Crea asta</button>
+      <div class="err" id="new-err"></div>
+    </div>
+    <div class="card" id="panel-join" style="display:none;">
+      <h3 style="margin-top:0;">Unisciti a un'asta</h3>
+      <div class="field"><label>Codice asta</label><input type="text" id="join-code" placeholder="es. FL-8X2K" style="text-transform:uppercase;"></div>
+      <button class="btn btn-primary" id="btn-join-auction">Entra</button>
+      <div class="err" id="join-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LIVE AUCTION -->
+<div class="screen" id="scr-live">
+  <div class="live-header">
+    <div class="live-title-row">
+      <button class="logout-x" id="btn-live-back">← Home</button>
+      <span class="code-pill" id="live-code">—</span>
+    </div>
+    <h2 id="live-title">—</h2>
+    <div class="credit-strip" id="credit-strip"></div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab on" data-tab="ricerca">Ricerca</div>
+    <div class="tab" data-tab="rose">Rose</div>
+    <div class="tab" data-tab="analisi">Analisi</div>
+  </div>
+
+  <div id="tab-ricerca">
+    <div class="perfido-bar" id="perfido-bar" style="display:none;"></div>
+    <div style="padding:0 16px; margin-top:12px;">
+      <button class="btn-sm btn-ghost" id="btn-perfido-toggle" style="width:100%;">😈 Modalità Perfido</button>
+    </div>
+    <div class="search-box"><input type="text" id="search-input" placeholder="Cerca giocatore..."></div>
+    <div class="plist" id="plist"></div>
+  </div>
+
+  <div id="tab-rose" style="display:none; padding:14px 16px;">
+    <div id="rose-content"></div>
+  </div>
+
+  <div id="tab-analisi" style="display:none; padding:14px 16px;">
+    <div class="field"><label>Analizza la rosa di:</label>
+      <select id="analisi-select"></select>
+    </div>
+    <div id="analisi-content"></div>
+  </div>
+</div>
+
+<!-- MODAL: player detail / sell -->
+<div class="overlay" id="modal-player">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+/* ====== CONFIGURA QUI ====== */
+const SUPABASE_URL = "INSERISCI_QUI_PROJECT_URL";
+const SUPABASE_ANON_KEY = "INSERISCI_QUI_ANON_KEY";
+/* ============================ */
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let state = {
+  user: null, profile: null,
+  isSignup: false,
+  auction: null, participants: [], players: [], purchases: [],
+  myParticipantId: null,
+  perfidoOn: false,
+  activeTab: 'ricerca',
+  channel: null
+};
+
+const $ = id => document.getElementById(id);
+function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); }
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none', 2200); }
+function fasciaColor(f){ return f==='verde'?'var(--emerald)': f==='rosso'?'var(--red)':'var(--yellow)'; }
+
+/* ---------- LAB SCORE ---------- */
+function labScore(p){
+  let score = 50;
+  score += ((p.fantamedia||6.0) - 6.0) * 40;
+  if(p.fascia==='verde') score += 18;
+  if(p.fascia==='rosso') score -= 15;
+  if(!p.titolare) score -= 12;
+  if(p.note && /scommessa/i.test(p.note)) score -= 6;
+  return Math.max(4, Math.min(99, Math.round(score)));
+}
+function scoreColor(s){ return s>=70?'var(--emerald)': s>=45?'var(--yellow)':'var(--red)'; }
+function starsFor(s){ const n=Math.round(s/20); return '★'.repeat(n)+'☆'.repeat(5-n); }
+
+/* ---------- AUTH ---------- */
+$('auth-switch-link').onclick = ()=>{
+  state.isSignup = !state.isSignup;
+  $('f-nome').style.display = state.isSignup?'block':'none';
+  $('btn-auth-submit').textContent = state.isSignup?'Crea account':'Accedi';
+  $('auth-switch').innerHTML = state.isSignup
+    ? 'Hai già un account? <a id="auth-switch-link2">Accedi</a>'
+    : 'Non hai un account? <a id="auth-switch-link2">Registrati</a>';
+  document.getElementById('auth-switch-link2').onclick = $('auth-switch-link').onclick;
+};
+
+$('btn-auth-submit').onclick = async ()=>{
+  $('auth-err').textContent='';
+  const email=$('in-email').value.trim(), pass=$('in-pass').value, nome=$('in-nome').value.trim();
+  if(!email || !pass){ $('auth-err').textContent='Compila email e password'; return; }
+  if(state.isSignup && !nome){ $('auth-err').textContent='Inserisci il tuo nome'; return; }
+  $('btn-auth-submit').textContent='...';
+  try{
+    if(state.isSignup){
+      const {data, error} = await sb.auth.signUp({email, password:pass});
+      if(error) throw error;
+      if(data.user){
+        await sb.from('profiles').insert({id:data.user.id, nome});
+      }
+      toast('Account creato ✓');
+    } else {
+      const {error} = await sb.auth.signInWithPassword({email, password:pass});
+      if(error) throw error;
+    }
+    await afterLogin();
+  }catch(e){
+    $('auth-err').textContent = e.message || 'Errore';
+  }
+  $('btn-auth-submit').textContent = state.isSignup?'Crea account':'Accedi';
+};
+
+async function afterLogin(){
+  const {data:{user}} = await sb.auth.getUser();
+  state.user = user;
+  let {data:profile} = await sb.from('profiles').select('*').eq('id', user.id).single();
+  if(!profile){
+    // fallback: profilo mancante, crealo con parte email
+    const nome = user.email.split('@')[0];
+    await sb.from('profiles').insert({id:user.id, nome});
+    profile = {id:user.id, nome};
+  }
+  state.profile = profile;
+  $('home-name').textContent = profile.nome;
+  await loadMyAuctions();
+  showScreen('scr-home');
+}
+
+$('btn-logout').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
+
+/* ---------- HOME ---------- */
+async function loadMyAuctions(){
+  const {data:parts} = await sb.from('auction_participants').select('*, auctions(*)').eq('user_id', state.user.id);
+  const box = $('my-auctions'); box.innerHTML='';
+  if(!parts || parts.length===0){ box.innerHTML = '<div style="color:var(--grey); font-size:13px;">Nessuna asta ancora. Creane una o unisciti con un codice.</div>'; return; }
+  parts.forEach(p=>{
+    if(!p.auctions) return;
+    const d = document.createElement('div');
+    d.className='card home-action';
+    d.innerHTML = `<div><div class="ti">${p.auctions.nome}</div><div class="sub">${p.auctions.crediti_totali} crediti · codice ${p.auctions.codice}</div></div><div class="chev">›</div>`;
+    d.onclick = ()=> enterAuction(p.auctions.id);
+    box.appendChild(d);
+  });
+}
+
+$('act-new').onclick = ()=>{ showScreen('scr-newjoin'); $('panel-new').style.display='block'; $('panel-join').style.display='none'; };
+$('act-join').onclick = ()=>{ showScreen('scr-newjoin'); $('panel-join').style.display='block'; $('panel-new').style.display='none'; };
+$('btn-back-home').onclick = ()=> showScreen('scr-home');
+
+function genCode(){ return 'FL-' + Math.random().toString(36).slice(2,6).toUpperCase(); }
+
+$('btn-create-auction').onclick = async ()=>{
+  const nome = $('new-nome').value.trim();
+  const crediti = parseInt($('new-crediti').value);
+  if(!nome){ $('new-err').textContent='Inserisci un nome'; return; }
+  const codice = genCode();
+  const {data, error} = await sb.from('auctions').insert({nome, codice, crediti_totali:crediti, owner_id: state.user.id}).select().single();
+  if(error){ $('new-err').textContent = error.message; return; }
+  await sb.from('auction_participants').insert({auction_id:data.id, user_id:state.user.id, nome:state.profile.nome, crediti_rimasti:crediti});
+  toast('Asta creata! Codice: '+codice);
+  await enterAuction(data.id);
+};
+
+$('btn-join-auction').onclick = async ()=>{
+  const code = $('join-code').value.trim().toUpperCase();
+  if(!code){ $('join-err').textContent='Inserisci un codice'; return; }
+  const {data:auction, error} = await sb.from('auctions').select('*').eq('codice', code).single();
+  if(error || !auction){ $('join-err').textContent='Codice non trovato'; return; }
+  const {data:existing} = await sb.from('auction_participants').select('*').eq('auction_id', auction.id).eq('user_id', state.user.id);
+  if(!existing || existing.length===0){
+    await sb.from('auction_participants').insert({auction_id:auction.id, user_id:state.user.id, nome:state.profile.nome, crediti_rimasti:auction.crediti_totali});
+  }
+  await enterAuction(auction.id);
+};
+
+/* ---------- LIVE AUCTION ---------- */
+async function enterAuction(auctionId){
+  const {data:auction} = await sb.from('auctions').select('*').eq('id', auctionId).single();
+  state.auction = auction;
+  await refreshAuctionData();
+  $('live-title').textContent = auction.nome;
+  $('live-code').textContent = auction.codice;
+  const analSel = $('analisi-select');
+  analSel.innerHTML = state.participants.map(p=>`<option value="${p.id}">${p.nome}${p.user_id===state.user.id?' (tu)':''}</option>`).join('');
+  const mine = state.participants.find(p=>p.user_id===state.user.id);
+  if(mine) state.myParticipantId = mine.id;
+  showScreen('scr-live');
+  renderCreditStrip();
+  renderPlayerList();
+  subscribeRealtime();
+}
+
+async function refreshAuctionData(){
+  const [{data:parts}, {data:players}, {data:purchases}] = await Promise.all([
+    sb.from('auction_participants').select('*').eq('auction_id', state.auction.id).order('nome'),
+    sb.from('players').select('*').order('nome'),
+    sb.from('purchases').select('*').eq('auction_id', state.auction.id)
+  ]);
+  state.participants = parts||[];
+  state.players = players||[];
+  state.purchases = purchases||[];
+}
+
+function subscribeRealtime(){
+  if(state.channel) sb.removeChannel(state.channel);
+  state.channel = sb.channel('auction-'+state.auction.id)
+    .on('postgres_changes', {event:'*', schema:'public', table:'purchases', filter:`auction_id=eq.${state.auction.id}`}, async ()=>{
+      await refreshAuctionData(); renderCreditStrip(); renderPlayerList(); renderRose(); renderAnalisi();
+    })
+    .on('postgres_changes', {event:'*', schema:'public', table:'auction_participants', filter:`auction_id=eq.${state.auction.id}`}, async ()=>{
+      await refreshAuctionData(); renderCreditStrip(); renderRose();
+    })
+    .subscribe();
+}
+
+function renderCreditStrip(){
+  const strip = $('credit-strip'); strip.innerHTML='';
+  state.participants.forEach(p=>{
+    const isMe = p.user_id===state.user.id;
+    const low = p.crediti_rimasti < state.auction.crediti_totali*0.15;
+    const el = document.createElement('div');
+    el.className = 'cpill'+(isMe?' me':'');
+    el.innerHTML = `<div class="cn">${p.nome}${isMe?' (tu)':''}</div><div class="cv${low?' low':''}">${p.crediti_rimasti}</div>`;
+    strip.appendChild(el);
+  });
+}
+
+function purchasedPlayerIds(){ return new Set(state.purchases.map(x=>x.player_id)); }
+
+function renderPlayerList(){
+  const q = $('search-input').value.trim().toLowerCase();
+  const sold = purchasedPlayerIds();
+  const list = state.players.filter(p=> p.nome.toLowerCase().includes(q));
+  const box = $('plist'); box.innerHTML='';
+  list.forEach(p=>{
+    const isSold = sold.has(p.id);
+    const s = labScore(p);
+    const card = document.createElement('div');
+    card.className = 'pcard'+(isSold?' sold':'');
+    card.innerHTML = `
+      <div class="ring" style="background:conic-gradient(${scoreColor(s)} ${s*3.6}deg, var(--border) 0deg);">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;">${s}</div>
+      </div>
+      <div class="pinfo">
+        <div class="pn"><span class="fascia-dot" style="background:${fasciaColor(p.fascia)}"></span> ${p.nome} <span class="roletag">${p.ruolo}</span></div>
+        <div class="pm">${p.squadra||''} · max ${p.prezzo_massimo||'-'} cr</div>
+      </div>
+      ${isSold ? '<span style="font-size:11px;color:var(--grey);">venduto</span>' : '<button class="buy-btn">Dettagli</button>'}
+    `;
+    if(!isSold) card.onclick = ()=> openPlayerModal(p);
+    box.appendChild(card);
+  });
+  if(list.length===0) box.innerHTML = '<div style="color:var(--grey); text-align:center; padding:30px 0; font-size:13px;">Nessun giocatore trovato.</div>';
+}
+$('search-input').oninput = renderPlayerList;
+
+function openPlayerModal(p){
+  const s = labScore(p);
+  const mine = state.participants.find(x=>x.id===state.myParticipantId);
+  let advice, adviceClass;
+  if(mine){
+    const budget = mine.crediti_rimasti;
+    if(p.prezzo_massimo <= budget*0.4 && s>=60){ advice = `Ottimo acquisto fino a ${p.prezzo_massimo} crediti. Rientra bene nel tuo budget residuo.`; adviceClass='advice-buy'; }
+    else if(p.fascia==='rosso'){ advice = `Attenzione: fascia sopravvalutata. Rilancia solo se resta sotto ${p.valore_consigliato} crediti, altrimenti lascialo agli altri.`; adviceClass='advice-avoid'; }
+    else if(p.prezzo_massimo > budget*0.5){ advice = `Impegnerebbe oltre metà del tuo budget residuo (${budget} cr). Valuta alternative nella stessa fascia.`; adviceClass='advice-wait'; }
+    else { advice = `Buon acquisto se il prezzo resta entro ${p.prezzo_massimo} crediti.`; adviceClass='advice-buy'; }
+  } else { advice = 'Seleziona il tuo profilo tra i partecipanti per consigli personalizzati.'; adviceClass='advice-wait'; }
+
+  $('modal-body').innerHTML = `
+    <div class="score-hero">
+      <div class="score-ring-big" style="background:conic-gradient(${scoreColor(s)} ${s*3.6}deg, var(--border) 0deg);">
+        <div style="width:98px;height:98px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;">${s}</div>
+      </div>
+      <h3 style="margin:6px 0 2px;">${p.nome}</h3>
+      <div style="color:var(--grey); font-size:13px;">${p.squadra||''} · ${p.ruolo}</div>
+      <div class="stars">${starsFor(s)}</div>
+    </div>
+    <div class="stat-grid">
+      <div class="s"><div class="l">FANTAMEDIA</div><div class="v">${p.fantamedia||'-'}</div></div>
+      <div class="s"><div class="l">FASCIA</div><div class="v" style="color:${fasciaColor(p.fascia)}">${(p.fascia||'-').toUpperCase()}</div></div>
+      <div class="s"><div class="l">VALORE CONSIGLIATO</div><div class="v">${p.valore_consigliato||'-'} cr</div></div>
+      <div class="s"><div class="l">PREZZO MASSIMO</div><div class="v">${p.prezzo_massimo||'-'} cr</div></div>
+    </div>
+    ${p.note?`<div style="font-size:12.5px; color:var(--grey); margin-bottom:6px;">📝 ${p.note}</div>`:''}
+    <div class="advice-box ${adviceClass}">🧠 ${advice}</div>
+    <div class="field"><label>Segna come venduto a:</label>
+      <select id="sell-participant">${state.participants.map(pt=>`<option value="${pt.id}">${pt.nome}${pt.user_id===state.user.id?' (tu)':''}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Prezzo (crediti)</label><input type="number" id="sell-price" min="1" placeholder="es. ${p.valore_consigliato||10}"></div>
+    <button class="btn btn-primary" id="btn-confirm-sell">Conferma vendita</button>
+    <button class="btn btn-ghost" id="btn-close-modal" style="margin-top:8px;">Chiudi</button>
+    <div class="err" id="sell-err"></div>
+  `;
+  $('btn-close-modal').onclick = closeModal;
+  $('btn-confirm-sell').onclick = async ()=>{
+    const partId = $('sell-participant').value;
+    const price = parseInt($('sell-price').value);
+    if(!price || price<1){ $('sell-err').textContent='Inserisci un prezzo valido'; return; }
+    const part = state.participants.find(x=>x.id===partId);
+    if(price > part.crediti_rimasti){ $('sell-err').textContent=`${part.nome} non ha crediti sufficienti`; return; }
+    await sb.from('purchases').insert({auction_id:state.auction.id, player_id:p.id, participant_id:partId, prezzo:price});
+    await sb.from('auction_participants').update({crediti_rimasti: part.crediti_rimasti - price}).eq('id', partId);
+    toast(`${p.nome} venduto a ${part.nome} per ${price}`);
+    closeModal();
+  };
+  $('modal-player').classList.add('on');
+}
+function closeModal(){ $('modal-player').classList.remove('on'); }
+
+/* ---------- MODALITA' PERFIDO ---------- */
+$('btn-perfido-toggle').onclick = ()=>{
+  state.perfidoOn = !state.perfidoOn;
+  $('perfido-bar').style.display = state.perfidoOn ? 'flex' : 'none';
+  renderPerfido();
+};
+function renderPerfido(){
+  if(!state.perfidoOn) return;
+  const sold = purchasedPlayerIds();
+  const avail = state.players.filter(p=>!sold.has(p.id));
+  const rossi = avail.filter(p=>p.fascia==='rosso').sort((a,b)=>(b.prezzo_massimo||0)-(a.prezzo_massimo||0));
+  const box = $('perfido-bar');
+  if(rossi.length===0){ box.innerHTML = `<div class="ic">😈</div><div class="tx">Nessun bersaglio "sopravvalutato" ancora disponibile. Continua a monitorare.</div>`; return; }
+  const target = rossi[0];
+  box.innerHTML = `<div class="ic">😈</div><div class="tx">Chiama <b>${target.nome}</b> ora: è sopravvalutato dal mercato, farai bruciare crediti agli avversari senza doverlo comprare.</div>`;
+}
+
+/* ---------- TABS ---------- */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+    state.activeTab = t.dataset.tab;
+    $('tab-ricerca').style.display = state.activeTab==='ricerca'?'block':'none';
+    $('tab-rose').style.display = state.activeTab==='rose'?'block':'none';
+    $('tab-analisi').style.display = state.activeTab==='analisi'?'block':'none';
+    if(state.activeTab==='rose') renderRose();
+    if(state.activeTab==='analisi') renderAnalisi();
+  };
+});
+
+function renderRose(){
+  const box = $('rose-content'); box.innerHTML='';
+  const byPlayer = Object.fromEntries(state.players.map(p=>[p.id,p]));
+  state.participants.forEach(part=>{
+    const mine = state.purchases.filter(x=>x.participant_id===part.id);
+    const tot = mine.reduce((s,x)=>s+x.prezzo,0);
+    const d = document.createElement('div');
+    d.className='roster-block card';
+    d.innerHTML = `<div class="rh"><span class="rn">${part.nome}${part.user_id===state.user.id?' (tu)':''}</span><span class="rc">${tot} cr spesi</span></div>` +
+      (mine.length? mine.map(x=>{const pl=byPlayer[x.player_id]; return `<div class="roster-item"><span>${pl?pl.nome:'?'} <span class="roletag">${pl?pl.ruolo:''}</span></span><span>${x.prezzo} cr</span></div>`;}).join('')
+      : '<div style="color:var(--grey); font-size:12.5px;">Ancora nessun acquisto.</div>');
+    box.appendChild(d);
+  });
+}
+
+function renderAnalisi(){
+  const partId = $('analisi-select').value || state.myParticipantId;
+  if(!partId){ $('analisi-content').innerHTML=''; return; }
+  const byPlayer = Object.fromEntries(state.players.map(p=>[p.id,p]));
+  const mine = state.purchases.filter(x=>x.participant_id===partId).map(x=>({...x, player:byPlayer[x.player_id]})).filter(x=>x.player);
+  if(mine.length===0){ $('analisi-content').innerHTML = '<div class="card" style="color:var(--grey); text-align:center;">Nessun giocatore acquistato ancora.</div>'; return; }
+  const avgScore = Math.round(mine.reduce((s,x)=>s+labScore(x.player),0)/mine.length);
+  const ruoli = {P:[],D:[],C:[],A:[]};
+  mine.forEach(x=> ruoli[x.player.ruolo]?.push(x));
+  const roleScore = r => ruoli[r].length ? Math.round(ruoli[r].reduce((s,x)=>s+labScore(x.player),0)/ruoli[r].length) : 0;
+  const winProb = Math.max(8, Math.min(92, Math.round(avgScore*0.9)));
+
+  $('analisi-content').innerHTML = `
+    <div class="score-hero">
+      <div class="score-ring-big" style="background:conic-gradient(${scoreColor(avgScore)} ${avgScore*3.6}deg, var(--border) 0deg);">
+        <div style="width:98px;height:98px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;">${avgScore}</div>
+      </div>
+      <div style="color:var(--grey); font-size:12px; margin-top:4px;">VOTO ROSA</div>
+    </div>
+    <div class="stat-grid">
+      <div class="s"><div class="l">PORTIERI</div><div class="v stars" style="font-size:13px;">${starsFor(roleScore('P'))}</div></div>
+      <div class="s"><div class="l">DIFESA</div><div class="v stars" style="font-size:13px;">${starsFor(roleScore('D'))}</div></div>
+      <div class="s"><div class="l">CENTROCAMPO</div><div class="v stars" style="font-size:13px;">${starsFor(roleScore('C'))}</div></div>
+      <div class="s"><div class="l">ATTACCO</div><div class="v stars" style="font-size:13px;">${starsFor(roleScore('A'))}</div></div>
+    </div>
+    <div class="advice-box advice-buy">🏆 Probabilità stimata di arrivare tra i primi: <b>${winProb}%</b></div>
+  `;
+}
+$('analisi-select').onchange = renderAnalisi;
+
+$('btn-live-back').onclick = async ()=>{ if(state.channel) sb.removeChannel(state.channel); await loadMyAuctions(); showScreen('scr-home'); };
+$('modal-player').onclick = (e)=>{ if(e.target.id==='modal-player') closeModal(); };
+
+/* ---------- BOOT ---------- */
+(async function boot(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(session){ await afterLogin(); }
+})();
+</script>
+</body>
+</html>
