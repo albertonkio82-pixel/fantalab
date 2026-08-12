@@ -301,6 +301,12 @@ $('btn-auth-submit').onclick = async ()=>{
       if(data.user){
         await sb.from('profiles').insert({id:data.user.id, nome});
       }
+      if(!data.session){
+        $('auth-err').style.color = 'var(--emerald)';
+        $('auth-err').textContent = 'Account creato. Controlla la mail e conferma l\'indirizzo, poi accedi.';
+        $('btn-auth-submit').textContent = 'Crea account';
+        return;
+      }
       toast('Account creato ✓');
     } else {
       const {error} = await sb.auth.signInWithPassword({email, password:pass});
@@ -315,6 +321,11 @@ $('btn-auth-submit').onclick = async ()=>{
 
 async function afterLogin(){
   const {data:{user}} = await sb.auth.getUser();
+  if(!user){
+    $('auth-err').style.color = 'var(--red)';
+    $('auth-err').textContent = 'Sessione non trovata. Conferma la mail (se richiesto) e riprova ad accedere.';
+    return;
+  }
   state.user = user;
   let {data:profile} = await sb.from('profiles').select('*').eq('id', user.id).single();
   if(!profile){
